@@ -9,7 +9,12 @@
 static int get_random_numbers(u8 *buf, unsigned int len)
 {
     struct crypto_rng *rng = NULL;
+
+#if 1 /* edward, debain hmac */
+    char *drbg = "drbg_pr_hmac_sha256"; /* HMAC DRBG with SHA-256, PR (predicition persistence) */
+#else    
     char *drbg = "drbg_nopr_sha256"; /* Hash DRBG with SHA-256, no PR */
+#endif
     int ret;
 
     if (!buf || !len) {
@@ -22,6 +27,10 @@ static int get_random_numbers(u8 *buf, unsigned int len)
         pr_info("could not allocate RNG handle for %s\n", drbg);
         return PTR_ERR(rng);
     }
+
+#if 1 /* edward: must call reset first, or crypto_rng_get_bytes will fail */
+    crypto_rng_reset(rng, NULL, 0);
+#endif
 
     ret = crypto_rng_get_bytes(rng, buf, len);
     if (ret < 0)
